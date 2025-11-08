@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Beekeeper</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' ry='20' fill='%23fad30f'/><text y='85' font-size='95' text-anchor='middle' x='50'>🐝</text></svg>">
+<style>
+body {
+font-family: Helvetica;
+max-width: 1200px;
+margin: 0 auto;
+padding: 20px;
+background: #f5f5f5;
+}
+.header {
+background: white;
+padding: 20px;
+border-radius: 8px;
+margin-bottom: 20px;
+box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+.header-left {
+flex: 1;
+}
+.header-right {
+display: flex;
+gap: 10px;
+align-items: center;
+}
+.auth-container {
+max-width: 400px;
+margin: 50px auto;
+background: white;
+padding: 30px;
+border-radius: 8px;
+box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.auth-container h2 {
+margin-top: 0;
+}
+.nav {
+display: flex;
+gap: 10px;
+margin-bottom: 20px;
+flex-wrap: wrap;
+}
+.nav button {
+padding: 10px 20px;
+border: none;
+background: #fad30f;
+border-radius: 5px;
+cursor: pointer;
+font-size: 14px;
+font-weight: bold;
+}
+.nav button:hover {
+background: #e8c20d;
+}
+.nav button.active {
+background: #333;
+color: white;
+}
+.section {
+display: none;
+background: white;
+padding: 20px;
+border-radius: 8px;
+box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.section.active {
+display: block;
+}
+.hive-grid {
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+gap: 15px;
+margin-top: 20px;
+}
+.hive-card {
+border: 2px solid #ddd;
+border-radius: 8px;
+padding: 15px;
+cursor: pointer;
+transition: all 0.3s;
+}
+.hive-card:hover {
+border-color: #fad30f;
+box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.hive-card.strong {
+border-left: 5px solid #4caf50;
+}
+.hive-card.moderate {
+border-left: 5px solid #fad30f;
+}
+.hive-card.weak {
+border-left: 5px solid #ff9800;
+}
+.hive-card.concern {
+border-left: 5px solid #f44336;
+}
+.form-group {
+margin-bottom: 15px;
+}
+.form-group label {
+display: block;
+margin-bottom: 5px;
+font-weight: bold;
+}
+.form-group input, .form-group select, .form-group textarea {
+width: 100%;
+padding: 8px;
+border: 1px solid #ddd;
+border-radius: 4px;
+box-sizing: border-box;
+}
+.form-group textarea {
+min-height: 100px;
+}
+.btn {
+padding: 10px 20px;
+border: none;
+background: #fad30f;
+border-radius: 5px;
+cursor: pointer;
+font-weight: bold;
+margin-right: 10px;
+}
+.btn:hover {
+background: #e8c20d;
+}
+.btn-secondary {
+background: #666;
+color: white;
+}
+.btn-secondary:hover {
+background: #555;
+}
+.inspection-list {
+list-style: none;
+padding: 0;
+}
+.inspection-item {
+border: 1px solid #ddd;
+border-radius: 5px;
+padding: 15px;
+margin-bottom: 10px;
+}
+.inspection-item h4 {
+margin: 0 0 10px 0;
+}
+.stats-grid {
+display: grid;
+grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+gap: 15px;
+margin-top: 20px;
+}
+.stat-card {
+background: #f9f9f9;
+padding: 20px;
+border-radius: 8px;
+text-align: center;
+}
+.stat-card h3 {
+margin: 0;
+font-size: 32px;
+color: #fad30f;
+}
+.stat-card p {
+margin: 10px 0 0 0;
+color: #666;
+}
+.error-message {
+background: #f44336;
+color: white;
+padding: 10px;
+border-radius: 5px;
+margin-bottom: 15px;
+}
+.success-message {
+background: #4caf50;
+color: white;
+padding: 10px;
+border-radius: 5px;
+margin-bottom: 15px;
+}
+.hidden {
+display: none;
+}
+.popup-overlay {
+display: none;
+position: fixed;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+background: rgba(0, 0, 0, 0.7);
+z-index: 1000;
+justify-content: center;
+align-items: center;
+}
+.popup-overlay.active {
+display: flex;
+}
+.popup-content {
+background: white;
+padding: 30px;
+border-radius: 8px;
+max-width: 500px;
+box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+</style>
+</head>
+<body>
+
+<!-- Authentication Screen -->
+<div id="authScreen" class="auth-container">
+<h2 id="authTitle">Beekeeper Login</h2>
+<div id="authMessage"></div>
+<form id="authForm">
+<div class="form-group">
+<label>Username:</label>
+<input type="text" id="authUsername" required>
+</div>
+<div class="form-group">
+<label>Password:</label>
+<input type="password" id="authPassword" required>
+</div>
+<div style="display: flex; gap: 10px;">
+<button type="button" class="btn" onclick="handleAuth('login')" style="flex: 1;">Login</button>
+<button type="button" class="btn" onclick="handleAuth('register')" style="flex: 1;">Create Account</button>
+</div>
+</form>
+</div>
+
+<!-- Delete Account Popup -->
+<div id="deleteAccountPopup" class="popup-overlay">
+<div class="popup-content">
+<div style="background: #fff3cd; padding: 20px; border-radius: 8px; border: 2px solid #ffc107;">
+<p>⚠️ <span style="color: #856404; font-weight: bold;">Deleting your account is permanent and cannot be undone. All your data will be permanently deleted:</span></p>
+<ul style="color: #856404;">
+<li>All hives</li>
+<li>All inspections</li>
+<li>All treatments</li>
+<li>All harvests</li>
+<li>All tasks</li>
+</ul>
+<button class="btn" style="background: #dc3545;" onclick="confirmDeleteAccount()">Confirm Delete</button>
+<button class="btn btn-secondary" onclick="closeDeleteAccountPopup()">Cancel</button>
+</div>
+</div>
+</div>
+
+<!-- Change Password Popup -->
+<div id="changePasswordPopup" class="popup-overlay">
+<div class="popup-content">
+<h3 style="margin-top: 0;">Change Password</h3>
+<div id="passwordChangeMessage"></div>
+<div class="form-group">
+<label>Current Password:</label>
+<input type="password" id="currentPassword" placeholder="Enter current password">
+</div>
+<div class="form-group">
+<label>New Password:</label>
+<input type="password" id="newPassword" placeholder="Enter new password">
+</div>
+<div class="form-group">
+<label>Confirm New Password:</label>
+<input type="password" id="confirmPassword" placeholder="Confirm new password">
+</div>
+<button class="btn" onclick="confirmChangePassword()">Update Password</button>
+<button class="btn btn-secondary" onclick="closeChangePasswordPopup()">Cancel</button>
+</div>
+</div>
+
+<!-- Main App (hidden until logged in) -->
+<div id="mainApp" class="hidden">
+<div class="header">
+<div class="header-left">
+<h1>🐝 <span style="color: #fad30f;">Beekeeper</span></h1>
+<p>Hive Management System</p>
+</div>
+<div class="header-right" style="display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
+<div style="display: flex; align-items: center; gap: 10px;">
+<span>Welcome, <span id="usernameEditable" contenteditable="true" style="cursor: text; padding: 3px; border-radius: 3px; border-bottom: 1px dashed #ccc;" onblur="updateUsername(this)" onfocus="selectAllText(this)" title="Click to edit username"></span>!</span>
+<button class="btn btn-secondary" onclick="logout()">Logout</button>
+</div>
+<div style="display: flex; align-items: center; gap: 10px;">
+<span>Password:<br>••••• <span style="cursor: pointer; color: #007bff;" onclick="showChangePasswordPopup()" title="Click to change password">(change)</span></span>
+<button class="btn" style="background: #dc3545;" onclick="showDeleteAccountPopup()">Delete Account</button>
+</div>
+</div>
+</div>
+
+<div class="nav">
+<button class="active" onclick="showSection('dashboard')">Dashboard</button>
+<button onclick="showSection('hives')">My Hives</button>
+<button onclick="showSection('inspections')">Inspections</button>
+<button onclick="showSection('treatments')">Treatments</button>
+<button onclick="showSection('harvest')">Harvest</button>
+<button onclick="showSection('tasks')">Tasks</button>
+</div>
+
+<div id="dashboard" class="section active">
+<h2>Dashboard</h2>
+<div class="stats-grid">
+<div class="stat-card">
+<h3 id="totalHives">0</h3>
+<p>Total Hives</p>
+</div>
+<div class="stat-card">
+<h3 id="upcomingTasks">0</h3>
+<p>Upcoming Tasks</p>
+</div>
+<div class="stat-card">
+<h3 id="totalHarvest">0</h3>
+<p>lbs Harvested This Year</p>
+</div>
+<div class="stat-card">
+<h3 id="activeTreatments">0</h3>
+<p>Active Treatments</p>
+</div>
+</div>
+</div>
+
+<div id="hives" class="section">
+<h2>My Hives</h2>
+<button class="btn" onclick="showAddHiveForm()">+ Add New Hive</button>
+<div id="addHiveForm" style="display:none; margin-top: 20px; border: 2px solid #fad30f; padding: 20px; border-radius: 8px;">
+<h3>Add New Hive</h3>
+<div class="form-group">
+<label>Hive Name:</label>
+<input type="text" id="hiveName" placeholder="e.g., Hive #1">
+</div>
+<div class="form-group">
+<label>Location:</label>
+<input type="text" id="hiveLocation" placeholder="e.g., North Garden">
+</div>
+<div class="form-group">
+<label>Hive Type:</label>
+<select id="hiveType">
+<option>Langstroth</option>
+<option>Top Bar</option>
+<option>Warre</option>
+<option>Flow Hive</option>
+</select>
+</div>
+<div class="form-group">
+<label>Colony Strength:</label>
+<select id="colonyStrength">
+<option value="strong">Strong</option>
+<option value="moderate">Moderate</option>
+<option value="weak">Weak</option>
+<option value="concern">Needs Attention</option>
+</select>
+</div>
+<div class="form-group">
+<label>Queen Age (years):</label>
+<input type="number" id="queenAge" min="0" max="5" value="1">
+</div>
+<div class="form-group">
+<label>Queen Color:</label>
+<select id="queenColor">
+<option>White (2021, 2026)</option>
+<option>Yellow (2022, 2027)</option>
+<option>Red (2023, 2028)</option>
+<option>Green (2024, 2029)</option>
+<option>Blue (2025, 2030)</option>
+</select>
+</div>
+<button class="btn" onclick="addHive()">Save Hive</button>
+<button class="btn btn-secondary" onclick="document.getElementById('addHiveForm').style.display='none'">Cancel</button>
+</div>
+<div class="hive-grid" id="hiveGrid"></div>
+</div>
+
+<div id="inspections" class="section">
+<h2>Inspection Logs</h2>
+<button class="btn" onclick="showAddInspectionForm()">+ New Inspection</button>
+<div id="addInspectionForm" style="display:none; margin-top: 20px; border: 2px solid #fad30f; padding: 20px; border-radius: 8px;">
+<h3>Log Inspection</h3>
+<div class="form-group">
+<label>Select Hive:</label>
+<select id="inspectionHive"></select>
+</div>
+<div class="form-group">
+<label>Date:</label>
+<input type="date" id="inspectionDate">
+</div>
+<div class="form-group">
+<label>Brood Pattern:</label>
+<select id="broodPattern">
+<option>Excellent</option>
+<option>Good</option>
+<option>Spotty</option>
+<option>Poor</option>
+</select>
+</div>
+<div class="form-group">
+<label>Temperament:</label>
+<select id="temperament">
+<option>Calm</option>
+<option>Normal</option>
+<option>Defensive</option>
+<option>Aggressive</option>
+</select>
+</div>
+<div class="form-group">
+<label>Varroa Mite Count (per 100 bees):</label>
+<input type="number" id="varroaCount" min="0">
+</div>
+<div class="form-group">
+<label>Honey Stores:</label>
+<select id="honeyStores">
+<option>Full</option>
+<option>Good</option>
+<option>Low</option>
+<option>Critical</option>
+</select>
+</div>
+<div class="form-group">
+<label>Notes:</label>
+<textarea id="inspectionNotes" placeholder="General observations, concerns, actions taken..."></textarea>
+</div>
+<button class="btn" onclick="addInspection()">Save Inspection</button>
+<button class="btn btn-secondary" onclick="document.getElementById('addInspectionForm').style.display='none'">Cancel</button>
+</div>
+<ul class="inspection-list" id="inspectionList"></ul>
+</div>
+
+<div id="treatments" class="section">
+<h2>Treatments & Health</h2>
+<button class="btn" onclick="showAddTreatmentForm()">+ Add Treatment</button>
+<div id="addTreatmentForm" style="display:none; margin-top: 20px; border: 2px solid #fad30f; padding: 20px; border-radius: 8px;">
+<h3>Record Treatment</h3>
+<div class="form-group">
+<label>Select Hive:</label>
+<select id="treatmentHive"></select>
+</div>
+<div class="form-group">
+<label>Treatment Type:</label>
+<select id="treatmentType">
+<option>Varroa - Apivar</option>
+<option>Varroa - Formic Acid</option>
+<option>Varroa - Oxalic Acid</option>
+<option>Nosema - Fumagilin</option>
+<option>Small Hive Beetle Trap</option>
+<option>Other</option>
+</select>
+</div>
+<div class="form-group">
+<label>Start Date:</label>
+<input type="date" id="treatmentStart">
+</div>
+<div class="form-group">
+<label>End Date:</label>
+<input type="date" id="treatmentEnd">
+</div>
+<div class="form-group">
+<label>Withdrawal Period (days before harvest):</label>
+<input type="number" id="withdrawalPeriod" value="0">
+</div>
+<div class="form-group">
+<label>Notes:</label>
+<textarea id="treatmentNotes"></textarea>
+</div>
+<button class="btn" onclick="addTreatment()">Save Treatment</button>
+<button class="btn btn-secondary" onclick="document.getElementById('addTreatmentForm').style.display='none'">Cancel</button>
+</div>
+<ul class="inspection-list" id="treatmentList"></ul>
+</div>
+
+<div id="harvest" class="section">
+<h2>Harvest Records</h2>
+<button class="btn" onclick="showAddHarvestForm()">+ Record Harvest</button>
+<div id="addHarvestForm" style="display:none; margin-top: 20px; border: 2px solid #fad30f; padding: 20px; border-radius: 8px;">
+<h3>Log Harvest</h3>
+<div class="form-group">
+<label>Select Hive:</label>
+<select id="harvestHive"></select>
+</div>
+<div class="form-group">
+<label>Date:</label>
+<input type="date" id="harvestDate">
+</div>
+<div class="form-group">
+<label>Amount (lbs):</label>
+<input type="number" id="harvestAmount" min="0" step="0.1">
+</div>
+<div class="form-group">
+<label>Notes:</label>
+<textarea id="harvestNotes" placeholder="Quality, color, floral source..."></textarea>
+</div>
+<button class="btn" onclick="addHarvest()">Save Harvest</button>
+<button class="btn btn-secondary" onclick="document.getElementById('addHarvestForm').style.display='none'">Cancel</button>
+</div>
+<ul class="inspection-list" id="harvestList"></ul>
+</div>
+
+<div id="tasks" class="section">
+<h2>Tasks & Reminders</h2>
+<button class="btn" onclick="showAddTaskForm()">+ Add Task</button>
+<div id="addTaskForm" style="display:none; margin-top: 20px; border: 2px solid #fad30f; padding: 20px; border-radius: 8px;">
+<h3>Create Task</h3>
+<div class="form-group">
+<label>Task:</label>
+<input type="text" id="taskName" placeholder="e.g., Weekly inspection">
+</div>
+<div class="form-group">
+<label>Related Hive:</label>
+<select id="taskHive">
+<option value="">All Hives</option>
+</select>
+</div>
+<div class="form-group">
+<label>Due Date:</label>
+<input type="date" id="taskDate">
+</div>
+<div class="form-group">
+<label>Priority:</label>
+<select id="taskPriority">
+<option>High</option>
+<option>Medium</option>
+<option>Low</option>
+</select>
+</div>
+<button class="btn" onclick="addTask()">Save Task</button>
+<button class="btn btn-secondary" onclick="document.getElementById('addTaskForm').style.display='none'">Cancel</button>
+</div>
+<ul class="inspection-list" id="taskList"></ul>
+</div>
+</div>
+
+<script>
+// API Configuration - CHANGE THIS TO YOUR SERVER URL
+const API_URL = 'http://localhost:3000/api';
+
+// Data storage
+let hives = [];
+let inspections = [];
+let treatments = [];
+let harvests = [];
+let tasks = [];
+let authToken = localStorage.getItem('authToken');
+let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+
+// Authentication functions
+async function handleAuth(action) {
+const username = document.getElementById('authUsername').value.trim();
+const password = document.getElementById('authPassword').value;
+
+if (!username || !password) {
+showAuthMessage('Please enter both username and password', 'error');
+return;
+}
+
+const endpoint = action === 'login' ? '/auth/login' : '/auth/register';
+const body = { username, password };
+
+try {
+const response = await fetch(API_URL + endpoint, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify(body)
+});
+
+const data = await response.json();
+
+if (!response.ok) {
+// Special message for duplicate username during signup
+if (action === 'register' && data.error && data.error.includes('already exists')) {
+showAuthMessage('An account with that username already exists. If you meant to log into your existing account, click the "Login" button instead.', 'error');
+} else {
+showAuthMessage(data.error || 'Authentication failed', 'error');
+}
+return;
+}
+
+authToken = data.token;
+currentUser = data.user;
+localStorage.setItem('authToken', authToken);
+localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+showAuthMessage(action === 'login' ? 'Login successful!' : 'Account created!', 'success');
+setTimeout(() => {
+document.getElementById('authScreen').classList.add('hidden');
+document.getElementById('mainApp').classList.remove('hidden');
+loadAllData();
+}, 500);
+} catch (error) {
+showAuthMessage('Connection error. Make sure the server is running.', 'error');
+console.error('Auth error:', error);
+}
+}
+
+function toggleAuthMode() {
+// This function is no longer needed but keeping it to avoid errors
+}
+
+function showAuthMessage(message, type) {
+const messageDiv = document.getElementById('authMessage');
+messageDiv.innerHTML = `<div class="${type}-message">${message}</div>`;
+}
+
+function logout() {
+localStorage.removeItem('authToken');
+localStorage.removeItem('currentUser');
+authToken = null;
+currentUser = null;
+document.getElementById('mainApp').classList.add('hidden');
+document.getElementById('authScreen').classList.remove('hidden');
+document.getElementById('authForm').reset();
+document.getElementById('authMessage').innerHTML = '';
+}
+
+function showDeleteAccountPopup() {
+document.getElementById('deleteAccountPopup').classList.add('active');
+}
+
+function closeDeleteAccountPopup() {
+document.getElementById('deleteAccountPopup').classList.remove('active');
+}
+
+async function confirmDeleteAccount() {
+try {
+await apiRequest('/auth/account', 'DELETE');
+closeDeleteAccountPopup();
+alert('Your account has been permanently deleted.');
+logout();
+} catch (error) {
+console.error('Error deleting account:', error);
+alert('Error deleting account. Please try again.');
+}
+}
+
+function showChangePasswordPopup() {
+document.getElementById('changePasswordPopup').classList.add('active');
+document.getElementById('passwordChangeMessage').innerHTML = '';
+document.getElementById('currentPassword').value = '';
+document.getElementById('newPassword').value = '';
+document.getElementById('confirmPassword').value = '';
+}
+
+function closeChangePasswordPopup() {
+document.getElementById('changePasswordPopup').classList.remove('active');
+}
+
+function showPasswordChangeMessage(message, type) {
+const messageDiv = document.getElementById('passwordChangeMessage');
+messageDiv.innerHTML = `<div class="${type}-message">${message}</div>`;
+}
+
+async function confirmChangePassword() {
+const currentPassword = document.getElementById('currentPassword').value;
+const newPassword = document.getElementById('newPassword').value;
+const confirmPassword = document.getElementById('confirmPassword').value;
+
+if (!currentPassword || !newPassword || !confirmPassword) {
+showPasswordChangeMessage('Please fill in all fields', 'error');
+return;
+}
+
+if (newPassword !== confirmPassword) {
+showPasswordChangeMessage('New passwords do not match', 'error');
+return;
+}
+
+if (newPassword.length < 1) {
+showPasswordChangeMessage('Password cannot be empty', 'error');
+return;
+}
+
+try {
+await apiRequest('/auth/password', 'PUT', { 
+currentPassword, 
+newPassword 
+});
+showPasswordChangeMessage('Password updated successfully!', 'success');
+setTimeout(() => {
+closeChangePasswordPopup();
+}, 1500);
+} catch (error) {
+console.error('Error changing password:', error);
+showPasswordChangeMessage('Error: Current password is incorrect or server error', 'error');
+}
+}
+
+function selectAllText(element) {
+const range = document.createRange();
+range.selectNodeContents(element);
+const selection = window.getSelection();
+selection.removeAllRanges();
+selection.addRange(range);
+}
+
+async function updateUsername(element) {
+const newUsername = element.textContent.trim();
+if (newUsername === currentUser.username) {
+return; // No change
+}
+
+if (!newUsername || newUsername.length < 1) {
+alert('Username cannot be empty');
+element.textContent = currentUser.username;
+return;
+}
+
+try {
+const response = await apiRequest('/auth/username', 'PUT', { username: newUsername });
+currentUser.username = newUsername;
+localStorage.setItem('currentUser', JSON.stringify(currentUser));
+element.textContent = newUsername;
+// Username updated silently - no popup needed
+} catch (error) {
+console.error('Error updating username:', error);
+alert('Error updating username. It may already be taken.');
+element.textContent = currentUser.username;
+}
+}
+
+// API helper function
+async function apiRequest(endpoint, method = 'GET', body = null) {
+const options = {
+method,
+headers: {
+'Content-Type': 'application/json',
+'Authorization': `Bearer ${authToken}`
+}
+};
+
+if (body) {
+options.body = JSON.stringify(body);
+}
+
+try {
+const response = await fetch(API_URL + endpoint, options);
+const data = await response.json();
+
+if (!response.ok) {
+if (response.status === 401 || response.status === 403) {
+alert('Session expired. Please login again.');
+logout();
+}
+throw new Error(data.error || 'API request failed');
+}
+
+return data;
+} catch (error) {
+console.error('API Error:', error);
+alert('Error: ' + error.message);
+throw error;
+}
+}
+
+// Load all data from server
+async function loadAllData() {
+try {
+document.getElementById('usernameEditable').textContent = currentUser.username;
+hives = await apiRequest('/hives');
+inspections = await apiRequest('/inspections');
+treatments = await apiRequest('/treatments');
+harvests = await apiRequest('/harvests');
+tasks = await apiRequest('/tasks');
+
+updateDashboard();
+renderHives();
+renderInspections();
+renderTreatments();
+renderHarvests();
+renderTasks();
+updateHiveSelects();
+} catch (error) {
+console.error('Error loading data:', error);
+}
+}
+
+// Initialize
+window.onload = function() {
+if (authToken && currentUser) {
+document.getElementById('authScreen').classList.add('hidden');
+document.getElementById('mainApp').classList.remove('hidden');
+loadAllData();
+}
+
+document.getElementById('inspectionDate').valueAsDate = new Date();
+document.getElementById('treatmentStart').valueAsDate = new Date();
+document.getElementById('harvestDate').valueAsDate = new Date();
+document.getElementById('taskDate').valueAsDate = new Date();
+};
+
+function showSection(sectionId) {
+document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+document.getElementById(sectionId).classList.add('active');
+event.target.classList.add('active');
+}
+
+function showAddHiveForm() {
+document.getElementById('addHiveForm').style.display = 'block';
+}
+
+function showAddInspectionForm() {
+document.getElementById('addInspectionForm').style.display = 'block';
+}
+
+function showAddTreatmentForm() {
+document.getElementById('addTreatmentForm').style.display = 'block';
+}
+
+function showAddHarvestForm() {
+document.getElementById('addHarvestForm').style.display = 'block';
+}
+
+function showAddTaskForm() {
+document.getElementById('addTaskForm').style.display = 'block';
+}
+
+async function addHive() {
+const hive = {
+name: document.getElementById('hiveName').value,
+location: document.getElementById('hiveLocation').value,
+type: document.getElementById('hiveType').value,
+strength: document.getElementById('colonyStrength').value,
+queenAge: parseInt(document.getElementById('queenAge').value),
+queenColor: document.getElementById('queenColor').value
+};
+
+try {
+const newHive = await apiRequest('/hives', 'POST', hive);
+hives.push(newHive);
+document.getElementById('addHiveForm').style.display = 'none';
+document.getElementById('hiveName').value = '';
+document.getElementById('hiveLocation').value = '';
+updateDashboard();
+renderHives();
+updateHiveSelects();
+} catch (error) {
+console.error('Error adding hive:', error);
+}
+}
+
+async function addInspection() {
+const inspection = {
+hiveId: parseInt(document.getElementById('inspectionHive').value),
+date: document.getElementById('inspectionDate').value,
+broodPattern: document.getElementById('broodPattern').value,
+temperament: document.getElementById('temperament').value,
+varroaCount: parseInt(document.getElementById('varroaCount').value) || 0,
+honeyStores: document.getElementById('honeyStores').value,
+notes: document.getElementById('inspectionNotes').value
+};
+
+try {
+const newInspection = await apiRequest('/inspections', 'POST', inspection);
+inspections.push(newInspection);
+document.getElementById('addInspectionForm').style.display = 'none';
+document.getElementById('inspectionNotes').value = '';
+renderInspections();
+} catch (error) {
+console.error('Error adding inspection:', error);
+}
+}
+
+async function addTreatment() {
+const treatment = {
+hiveId: parseInt(document.getElementById('treatmentHive').value),
+type: document.getElementById('treatmentType').value,
+startDate: document.getElementById('treatmentStart').value,
+endDate: document.getElementById('treatmentEnd').value,
+withdrawalPeriod: parseInt(document.getElementById('withdrawalPeriod').value),
+notes: document.getElementById('treatmentNotes').value
+};
+
+try {
+const newTreatment = await apiRequest('/treatments', 'POST', treatment);
+treatments.push(newTreatment);
+document.getElementById('addTreatmentForm').style.display = 'none';
+document.getElementById('treatmentNotes').value = '';
+updateDashboard();
+renderTreatments();
+} catch (error) {
+console.error('Error adding treatment:', error);
+}
+}
+
+async function addHarvest() {
+const harvest = {
+hiveId: parseInt(document.getElementById('harvestHive').value),
+date: document.getElementById('harvestDate').value,
+amount: parseFloat(document.getElementById('harvestAmount').value),
+notes: document.getElementById('harvestNotes').value
+};
+
+try {
+const newHarvest = await apiRequest('/harvests', 'POST', harvest);
+harvests.push(newHarvest);
+document.getElementById('addHarvestForm').style.display = 'none';
+document.getElementById('harvestAmount').value = '';
+document.getElementById('harvestNotes').value = '';
+updateDashboard();
+renderHarvests();
+} catch (error) {
+console.error('Error adding harvest:', error);
+}
+}
+
+async function addTask() {
+const task = {
+name: document.getElementById('taskName').value,
+hiveId: parseInt(document.getElementById('taskHive').value) || null,
+date: document.getElementById('taskDate').value,
+priority: document.getElementById('taskPriority').value
+};
+
+try {
+const newTask = await apiRequest('/tasks', 'POST', task);
+tasks.push(newTask);
+document.getElementById('addTaskForm').style.display = 'none';
+document.getElementById('taskName').value = '';
+updateDashboard();
+renderTasks();
+} catch (error) {
+console.error('Error adding task:', error);
+}
+}
+
+function renderHives() {
+const grid = document.getElementById('hiveGrid');
+grid.innerHTML = '';
+hives.forEach(hive => {
+const card = document.createElement('div');
+card.className = `hive-card ${hive.strength}`;
+card.innerHTML = `
+<h3>${hive.name}</h3>
+<p><strong>Location:</strong> ${hive.location}</p>
+<p><strong>Type:</strong> ${hive.type}</p>
+<p><strong>Strength:</strong> ${hive.strength}</p>
+<p><strong>Queen:</strong> ${hive.queen_age} years (${hive.queen_color})</p>
+<button class="btn btn-secondary" style="margin-top: 10px;" onclick="deleteHive(${hive.id})">Delete Hive</button>
+`;
+grid.appendChild(card);
+});
+}
+
+function renderInspections() {
+const list = document.getElementById('inspectionList');
+list.innerHTML = '';
+inspections.slice().reverse().forEach(inspection => {
+const hive = hives.find(h => h.id == inspection.hive_id);
+const item = document.createElement('li');
+item.className = 'inspection-item';
+item.innerHTML = `
+<h4>${inspection.hive_name || 'Unknown Hive'} - ${inspection.date}</h4>
+<p><strong>Brood:</strong> ${inspection.brood_pattern} | <strong>Temperament:</strong> ${inspection.temperament}</p>
+<p><strong>Varroa:</strong> ${inspection.varroa_count || 'N/A'} | <strong>Honey Stores:</strong> ${inspection.honey_stores}</p>
+<p><strong>Notes:</strong> ${inspection.notes || 'None'}</p>
+<button class="btn btn-secondary" onclick="deleteInspection(${inspection.id})">Delete</button>
+`;
+list.appendChild(item);
+});
+}
+
+function renderTreatments() {
+const list = document.getElementById('treatmentList');
+list.innerHTML = '';
+treatments.slice().reverse().forEach(treatment => {
+const item = document.createElement('li');
+item.className = 'inspection-item';
+item.innerHTML = `
+<h4>${treatment.hive_name || 'Unknown Hive'} - ${treatment.type}</h4>
+<p><strong>Period:</strong> ${treatment.start_date} to ${treatment.end_date}</p>
+<p><strong>Withdrawal:</strong> ${treatment.withdrawal_period} days</p>
+<p><strong>Notes:</strong> ${treatment.notes || 'None'}</p>
+<button class="btn btn-secondary" onclick="deleteTreatment(${treatment.id})">Delete</button>
+`;
+list.appendChild(item);
+});
+}
+
+function renderHarvests() {
+const list = document.getElementById('harvestList');
+list.innerHTML = '';
+harvests.slice().reverse().forEach(harvest => {
+const item = document.createElement('li');
+item.className = 'inspection-item';
+item.innerHTML = `
+<h4>${harvest.hive_name || 'Unknown Hive'} - ${harvest.date}</h4>
+<p><strong>Amount:</strong> ${harvest.amount} lbs</p>
+<p><strong>Notes:</strong> ${harvest.notes || 'None'}</p>
+<button class="btn btn-secondary" onclick="deleteHarvest(${harvest.id})">Delete</button>
+`;
+list.appendChild(item);
+});
+}
+
+function renderTasks() {
+const list = document.getElementById('taskList');
+list.innerHTML = '';
+tasks.filter(t => !t.completed).forEach(task => {
+const item = document.createElement('li');
+item.className = 'inspection-item';
+item.innerHTML = `
+<h4>${task.name} - ${task.date}</h4>
+<p><strong>Hive:</strong> ${task.hive_name || 'All Hives'} | <strong>Priority:</strong> ${task.priority}</p>
+<button class="btn" onclick="completeTask(${task.id})">Mark Complete</button>
+<button class="btn btn-secondary" onclick="deleteTask(${task.id})">Delete</button>
+`;
+list.appendChild(item);
+});
+}
+
+async function completeTask(taskId) {
+try {
+await apiRequest(`/tasks/${taskId}/complete`, 'PUT');
+const task = tasks.find(t => t.id === taskId);
+if (task) {
+task.completed = true;
+}
+updateDashboard();
+renderTasks();
+} catch (error) {
+console.error('Error completing task:', error);
+}
+}
+
+async function deleteHive(hiveId) {
+if (!confirm('Are you sure you want to delete this hive? This will also delete all inspections, treatments, and harvests associated with it.')) {
+return;
+}
+try {
+await apiRequest(`/hives/${hiveId}`, 'DELETE');
+hives = hives.filter(h => h.id !== hiveId);
+updateDashboard();
+renderHives();
+updateHiveSelects();
+} catch (error) {
+console.error('Error deleting hive:', error);
+}
+}
+
+async function deleteInspection(inspectionId) {
+if (!confirm('Are you sure you want to delete this inspection?')) {
+return;
+}
+try {
+await apiRequest(`/inspections/${inspectionId}`, 'DELETE');
+inspections = inspections.filter(i => i.id !== inspectionId);
+renderInspections();
+} catch (error) {
+console.error('Error deleting inspection:', error);
+}
+}
+
+async function deleteTreatment(treatmentId) {
+if (!confirm('Are you sure you want to delete this treatment?')) {
+return;
+}
+try {
+await apiRequest(`/treatments/${treatmentId}`, 'DELETE');
+treatments = treatments.filter(t => t.id !== treatmentId);
+updateDashboard();
+renderTreatments();
+} catch (error) {
+console.error('Error deleting treatment:', error);
+}
+}
+
+async function deleteHarvest(harvestId) {
+if (!confirm('Are you sure you want to delete this harvest record?')) {
+return;
+}
+try {
+await apiRequest(`/harvests/${harvestId}`, 'DELETE');
+harvests = harvests.filter(h => h.id !== harvestId);
+updateDashboard();
+renderHarvests();
+} catch (error) {
+console.error('Error deleting harvest:', error);
+}
+}
+
+async function deleteTask(taskId) {
+if (!confirm('Are you sure you want to delete this task?')) {
+return;
+}
+try {
+await apiRequest(`/tasks/${taskId}`, 'DELETE');
+tasks = tasks.filter(t => t.id !== taskId);
+updateDashboard();
+renderTasks();
+} catch (error) {
+console.error('Error deleting task:', error);
+}
+}
+
+function updateDashboard() {
+document.getElementById('totalHives').textContent = hives.length;
+document.getElementById('upcomingTasks').textContent = tasks.filter(t => !t.completed).length;
+const currentYear = new Date().getFullYear();
+const yearHarvest = harvests
+.filter(h => new Date(h.date).getFullYear() === currentYear)
+.reduce((sum, h) => sum + parseFloat(h.amount || 0), 0);
+document.getElementById('totalHarvest').textContent = yearHarvest.toFixed(1);
+const activeTreatmentCount = treatments.filter(t => {
+const endDate = new Date(t.end_date);
+return endDate >= new Date();
+}).length;
+document.getElementById('activeTreatments').textContent = activeTreatmentCount;
+}
+
+function updateHiveSelects() {
+const selects = [
+document.getElementById('inspectionHive'),
+document.getElementById('treatmentHive'),
+document.getElementById('harvestHive'),
+document.getElementById('taskHive')
+];
+selects.forEach(select => {
+if (select.id === 'taskHive') {
+select.innerHTML = '<option value="">All Hives</option>';
+} else {
+select.innerHTML = '';
+}
+hives.forEach(hive => {
+const option = document.createElement('option');
+option.value = hive.id;
+option.textContent = hive.name;
+select.appendChild(option);
+});
+});
+}
+</script>
+</body>
+</html>
