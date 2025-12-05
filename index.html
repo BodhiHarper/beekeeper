@@ -7,17 +7,14 @@
 <style>
 body {
 font-family: Helvetica;
-max-width: 1200px;
-margin: 0 auto;
-padding: 20px;
-background: #f5f5f5;
+margin: 0;
+padding: 0;
+background: #ffffff;
 }
 .header {
-background: white;
 padding: 20px;
-border-radius: 8px;
-margin-bottom: 20px;
-box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+margin-bottom: 20px;  /* Keep bottom margin */
+border-bottom: 1px solid #a2a9b1;
 display: flex;
 justify-content: space-between;
 align-items: center;
@@ -30,13 +27,15 @@ display: flex;
 gap: 10px;
 align-items: center;
 }
+.container {
+max-width: 1200px;
+margin: 0 auto;
+padding: 0 20px;
+}
 .auth-container {
 max-width: 400px;
 margin: 50px auto;
-background: white;
 padding: 30px;
-border-radius: 8px;
-box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 .auth-container h2 {
 margin-top: 0;
@@ -50,25 +49,23 @@ flex-wrap: wrap;
 .nav button {
 padding: 10px 20px;
 border: none;
-background: #fad30f;
+color: #007bff;
+background: none;
 border-radius: 5px;
 cursor: pointer;
 font-size: 14px;
 font-weight: bold;
 }
 .nav button:hover {
-background: #e8c20d;
+text-decoration: underline;
 }
 .nav button.active {
-background: #333;
-color: white;
+color: black;
+text-decoration: underline;
 }
 .section {
 display: none;
-background: white;
 padding: 20px;
-border-radius: 8px;
-box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 .section.active {
 display: block;
@@ -80,11 +77,10 @@ gap: 15px;
 margin-top: 20px;
 }
 .hive-card {
-border: 2px solid #ddd;
-border-radius: 8px;
+border: 1px solid #a2a9b1;  /* Simple border like Wikipedia */
 padding: 15px;
+margin-bottom: 15px;
 cursor: pointer;
-transition: all 0.3s;
 }
 .hive-card:hover {
 border-color: #fad30f;
@@ -173,19 +169,90 @@ color: #fad30f;
 margin: 10px 0 0 0;
 color: #666;
 }
+/* MediaWiki Codex Message Styles */
+.cdx-message {
+background-color: #eaecf0;
+color: #202122;
+display: flex;
+align-items: flex-start;
+position: relative;
+border: 1px solid #72777d;
+border-radius: 2px;
+padding: 12px;
+margin-bottom: 8px;
+font-size: 0.875rem;
+line-height: 1.5714285;
+}
+.cdx-message__icon {
+flex-shrink: 0;
+width: 20px;
+height: 20px;
+margin-right: 8px;
+display: inline-block;
+position: relative;
+}
+/* Error icon - red octagon with exclamation mark (MediaWiki Codex) */
+.cdx-message--error .cdx-message__icon::before {
+content: '';
+position: absolute;
+width: 20px;
+height: 20px;
+background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><path fill="%23f54739" d="M13.728 1H6.272L1 6.272v7.456L6.272 19h7.456L19 13.728V6.272zM11 15H9v-2h2zm0-4H9V5h2z"/></svg>');
+background-size: 20px 20px;
+}
+/* Success icon - green checkmark circle (MediaWiki Codex) */
+.cdx-message--success .cdx-message__icon::before {
+content: '';
+position: absolute;
+width: 20px;
+height: 20px;
+background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><path fill="%23099979" d="M10 20a10 10 0 0 1 0-20 10 10 0 1 1 0 20m-2-5 9-8.5L15.5 5 8 12 4.5 8.5 3 10z"/></svg>');
+background-size: 20px 20px;
+}
+/* Warning icon - yellow triangle */
+/* Warning icon - yellow triangle (MediaWiki Codex) */
+.cdx-message--warning .cdx-message__icon::before {
+content: '';
+position: absolute;
+width: 20px;
+height: 20px;
+background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><path fill="%23ab7f2a" d="M11.53 2.3A1.85 1.85 0 0 0 10 1.21 1.85 1.85 0 0 0 8.48 2.3L.36 16.36C-.48 17.81.21 19 1.88 19h16.24c1.67 0 2.36-1.19 1.52-2.64zM11 16H9v-2h2zm0-4H9V6h2z"/></svg>');
+background-size: 20px 20px;
+}
+.cdx-message__content {
+flex-grow: 1;
+}
+.cdx-message strong {
+font-weight: bold;
+}
+.cdx-message--error {
+background-color: #ffe9e5;
+border-color: #f54739;
+}
+.cdx-message--success {
+background-color: #dff2eb;
+border-color: #099979;
+}
+.cdx-message--warning {
+background-color: #fdf2d5;
+border-color: #ab7f2a;
+}
+/* Legacy class names (for backwards compatibility) */
 .error-message {
-background: #f44336;
-color: white;
-padding: 10px;
-border-radius: 5px;
-margin-bottom: 15px;
+background-color: #ffe9e5;
+color: #202122;
+border: 1px solid #f54739;
+border-radius: 2px;
+padding: 12px;
+margin-bottom: 8px;
 }
 .success-message {
-background: #4caf50;
-color: white;
-padding: 10px;
-border-radius: 5px;
-margin-bottom: 15px;
+background-color: #d5fdf4;
+color: #202122;
+border: 1px solid #14866d;
+border-radius: 2px;
+padding: 12px;
+margin-bottom: 8px;
 }
 .hidden {
 display: none;
@@ -239,17 +306,22 @@ box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 <!-- Delete Account Popup -->
 <div id="deleteAccountPopup" class="popup-overlay">
 <div class="popup-content">
-<div style="background: #fff3cd; padding: 20px; border-radius: 8px; border: 2px solid #ffc107;">
-<p>⚠️ <span style="color: #856404; font-weight: bold;">Deleting your account is permanent and cannot be undone. All your data will be permanently deleted:</span></p>
-<ul style="color: #856404;">
+<div class="cdx-message cdx-message--warning" style="padding: 20px;">
+<span class="cdx-message__icon"></span>
+<div class="cdx-message__content">
+<p><strong>Warning:</strong> Deleting your account is permanent and cannot be undone. All your data will be permanently deleted:</p>
+<ul style="margin: 10px 0; padding-left: 20px;">
 <li>All hives</li>
 <li>All inspections</li>
 <li>All treatments</li>
 <li>All harvests</li>
 <li>All tasks</li>
 </ul>
-<button class="btn" style="background: #dc3545;" onclick="confirmDeleteAccount()">Confirm Delete</button>
-<button class="btn btn-secondary" onclick="closeDeleteAccountPopup()">Cancel</button>
+<div style="margin-top: 15px;">
+<button class="btn" style="background: var(--color-destructive, #bf3c2c); color: white; margin-right: 10px;" onclick="confirmDeleteAccount()">Confirm delete</button>
+<button class="btn" style="background: none;" onclick="closeDeleteAccountPopup()">Cancel</button>
+</div>
+</div>
 </div>
 </div>
 </div>
@@ -280,24 +352,21 @@ box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 <div id="mainApp" class="hidden">
 <div class="header">
 <div class="header-left">
-<h1>🐝 <span style="color: #fad30f;">Beekeeper</span></h1>
+<span style="font-size: 20px;">🐝 <span style="color: #fad30f;"><b>Beekeeper</b></span></span>
 <p>Hive Management System</p>
 </div>
-<div class="header-right" style="display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
-<div style="display: flex; align-items: center; gap: 10px;">
-<span>Welcome, <span id="usernameEditable" contenteditable="true" style="cursor: text; padding: 3px; border-radius: 3px; border-bottom: 1px dashed #ccc;" onblur="updateUsername(this)" onfocus="selectAllText(this)" title="Click to edit username"></span>!</span>
-<button class="btn btn-secondary" onclick="logout()">Logout</button>
-</div>
-<div style="display: flex; align-items: center; gap: 10px;">
-<span>Password:<br>••••• <span style="cursor: pointer; color: #007bff;" onclick="showChangePasswordPopup()" title="Click to change password">(change)</span></span>
-<button class="btn" style="background: #dc3545;" onclick="showDeleteAccountPopup()">Delete Account</button>
-</div>
+<div class="header-right" style="display: flex; flex-direction: row; align-items: center; gap: 10px;">
+<span id="usernameEditable" contenteditable="true" style="cursor: text; padding: 3px; border-radius: 3px; border-bottom: 1px dashed #ccc;" onblur="updateUsername(this)" onfocus="selectAllText(this)" title="Click to edit username"></span>
+<span style="cursor: pointer; color: #007bff;" onclick="showChangePasswordPopup()" title="Click to change password">Change password</span>
+<span style="cursor: pointer; color: #007bff;" onclick="showDeleteAccountPopup()">Delete account</span>
+<button class="btn" style="background: none;" onclick="logout()">Logout</button>
 </div>
 </div>
 
+<div class="container">
 <div class="nav">
 <button class="active" onclick="showSection('dashboard')">Dashboard</button>
-<button onclick="showSection('hives')">My Hives</button>
+<button onclick="showSection('hives')">Hives</button>
 <button onclick="showSection('inspections')">Inspections</button>
 <button onclick="showSection('treatments')">Treatments</button>
 <button onclick="showSection('harvest')">Harvest</button>
@@ -305,7 +374,6 @@ box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 </div>
 
 <div id="dashboard" class="section active">
-<h2>Dashboard</h2>
 <div class="stats-grid">
 <div class="stat-card">
 <h3 id="totalHives">0</h3>
@@ -327,7 +395,6 @@ box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 </div>
 
 <div id="hives" class="section">
-<h2>My Hives</h2>
 <button class="btn" onclick="showAddHiveForm()">+ Add New Hive</button>
 <div id="addHiveForm" style="display:none; margin-top: 20px; border: 2px solid #fad30f; padding: 20px; border-radius: 8px;">
 <h3>Add New Hive</h3>
@@ -533,6 +600,7 @@ box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 <ul class="inspection-list" id="taskList"></ul>
 </div>
 </div>
+</div>
 
 <script>
 // API Configuration - CHANGE THIS TO YOUR SERVER URL
@@ -602,7 +670,14 @@ function toggleAuthMode() {
 
 function showAuthMessage(message, type) {
 const messageDiv = document.getElementById('authMessage');
-messageDiv.innerHTML = `<div class="${type}-message">${message}</div>`;
+const typeLabel = type === 'error' ? 'Error' : type === 'success' ? 'Success' : 'Notice';
+messageDiv.innerHTML = `
+<div class="cdx-message cdx-message--${type}">
+<span class="cdx-message__icon"></span>
+<div class="cdx-message__content">
+<strong>${typeLabel}:</strong> ${message}
+</div>
+</div>`;
 }
 
 function logout() {
@@ -650,7 +725,14 @@ document.getElementById('changePasswordPopup').classList.remove('active');
 
 function showPasswordChangeMessage(message, type) {
 const messageDiv = document.getElementById('passwordChangeMessage');
-messageDiv.innerHTML = `<div class="${type}-message">${message}</div>`;
+const typeLabel = type === 'error' ? 'Error' : type === 'success' ? 'Success' : 'Notice';
+messageDiv.innerHTML = `
+<div class="cdx-message cdx-message--${type}">
+<span class="cdx-message__icon"></span>
+<div class="cdx-message__content">
+<strong>${typeLabel}:</strong> ${message}
+</div>
+</div>`;
 }
 
 async function confirmChangePassword() {
@@ -939,7 +1021,7 @@ card.innerHTML = `
 <p><strong>Type:</strong> ${hive.type}</p>
 <p><strong>Strength:</strong> ${hive.strength}</p>
 <p><strong>Queen:</strong> ${hive.queen_age} years (${hive.queen_color})</p>
-<button class="btn btn-secondary" style="margin-top: 10px;" onclick="deleteHive(${hive.id})">Delete Hive</button>
+<button class="btn" style="background: var(--color-destructive, #bf3c2c); color: white;" style="margin-top: 10px;" onclick="deleteHive(${hive.id})">Delete</button>
 `;
 grid.appendChild(card);
 });
@@ -990,7 +1072,7 @@ item.innerHTML = `
 <h4>${harvest.hive_name || 'Unknown Hive'} - ${harvest.date}</h4>
 <p><strong>Amount:</strong> ${harvest.amount} lbs</p>
 <p><strong>Notes:</strong> ${harvest.notes || 'None'}</p>
-<button class="btn btn-secondary" onclick="deleteHarvest(${harvest.id})">Delete</button>
+<button class="btn" style="background: var(--color-destructive, #bf3c2c); color: white;" onclick="deleteHarvest(${harvest.id})">Delete</button>
 `;
 list.appendChild(item);
 });
