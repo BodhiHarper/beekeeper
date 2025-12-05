@@ -13,7 +13,7 @@ background: #ffffff;
 }
 .header {
 padding: 20px;
-margin-bottom: 20px;  /* Keep bottom margin */
+margin-bottom: 20px;
 border-bottom: 1px solid #a2a9b1;
 display: flex;
 justify-content: space-between;
@@ -32,14 +32,6 @@ max-width: 1200px;
 margin: 0 auto;
 padding: 0 20px;
 }
-.auth-container {
-max-width: 400px;
-margin: 50px auto;
-padding: 30px;
-}
-.auth-container h2 {
-margin-top: 0;
-}
 .nav {
 display: flex;
 gap: 10px;
@@ -51,7 +43,6 @@ padding: 10px 20px;
 border: none;
 color: #007bff;
 background: none;
-border-radius: 5px;
 cursor: pointer;
 font-size: 14px;
 font-weight: bold;
@@ -76,28 +67,6 @@ grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
 gap: 15px;
 margin-top: 20px;
 }
-.hive-card {
-border: 1px solid #a2a9b1;  /* Simple border like Wikipedia */
-padding: 15px;
-margin-bottom: 15px;
-cursor: pointer;
-}
-.hive-card:hover {
-border-color: #fad30f;
-box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-.hive-card.strong {
-border-left: 5px solid #4caf50;
-}
-.hive-card.moderate {
-border-left: 5px solid #fad30f;
-}
-.hive-card.weak {
-border-left: 5px solid #ff9800;
-}
-.hive-card.concern {
-border-left: 5px solid #f44336;
-}
 .form-group {
 margin-bottom: 15px;
 }
@@ -110,7 +79,6 @@ font-weight: bold;
 width: 100%;
 padding: 8px;
 border: 1px solid #ddd;
-border-radius: 4px;
 box-sizing: border-box;
 }
 .form-group textarea {
@@ -120,7 +88,7 @@ min-height: 100px;
 padding: 10px 20px;
 border: none;
 background: #fad30f;
-border-radius: 5px;
+border-radius: 2px;
 cursor: pointer;
 font-weight: bold;
 margin-right: 10px;
@@ -128,20 +96,12 @@ margin-right: 10px;
 .btn:hover {
 background: #e8c20d;
 }
-.btn-secondary {
-background: #666;
-color: white;
-}
-.btn-secondary:hover {
-background: #555;
-}
 .inspection-list {
 list-style: none;
 padding: 0;
 }
 .inspection-item {
 border: 1px solid #ddd;
-border-radius: 5px;
 padding: 15px;
 margin-bottom: 10px;
 }
@@ -155,9 +115,8 @@ gap: 15px;
 margin-top: 20px;
 }
 .stat-card {
-background: #f9f9f9;
+background: #f8f9fa;
 padding: 20px;
-border-radius: 8px;
 text-align: center;
 }
 .stat-card h3 {
@@ -209,7 +168,6 @@ height: 20px;
 background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><path fill="%23099979" d="M10 20a10 10 0 0 1 0-20 10 10 0 1 1 0 20m-2-5 9-8.5L15.5 5 8 12 4.5 8.5 3 10z"/></svg>');
 background-size: 20px 20px;
 }
-/* Warning icon - yellow triangle */
 /* Warning icon - yellow triangle (MediaWiki Codex) */
 .cdx-message--warning .cdx-message__icon::before {
 content: '';
@@ -237,23 +195,6 @@ border-color: #099979;
 background-color: #fdf2d5;
 border-color: #ab7f2a;
 }
-/* Legacy class names (for backwards compatibility) */
-.error-message {
-background-color: #ffe9e5;
-color: #202122;
-border: 1px solid #f54739;
-border-radius: 2px;
-padding: 12px;
-margin-bottom: 8px;
-}
-.success-message {
-background-color: #d5fdf4;
-color: #202122;
-border: 1px solid #14866d;
-border-radius: 2px;
-padding: 12px;
-margin-bottom: 8px;
-}
 .hidden {
 display: none;
 }
@@ -275,32 +216,48 @@ display: flex;
 .popup-content {
 background: white;
 padding: 30px;
-border-radius: 8px;
 max-width: 500px;
-box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+border: 1px solid #a2a9b1;
 }
 </style>
 </head>
 <body>
 
-<!-- Authentication Screen -->
-<div id="authScreen" class="auth-container">
-<h2 id="authTitle">Beekeeper Login</h2>
-<div id="authMessage"></div>
-<form id="authForm">
+<!-- Create Account Overlay -->
+<div id="createAccountOverlay" class="popup-overlay">
+<div class="popup-content">
+<h2>Create Your Account</h2>
+<p>Your current hives and data will be saved to your new account.</p>
+<div id="createAccountMessage"></div>
 <div class="form-group">
 <label>Username:</label>
-<input type="text" id="authUsername" required>
+<input type="text" id="createUsername" required>
 </div>
 <div class="form-group">
 <label>Password:</label>
-<input type="password" id="authPassword" required>
+<input type="password" id="createPassword" required>
 </div>
-<div style="display: flex; gap: 10px;">
-<button type="button" class="btn" onclick="handleAuth('login')" style="flex: 1;">Login</button>
-<button type="button" class="btn" onclick="handleAuth('register')" style="flex: 1;">Create Account</button>
+<button class="btn" onclick="createAccountFromAnonymous()">Create Account</button>
+<button class="btn" style="background: none;" onclick="closeCreateAccountOverlay()">Cancel</button>
 </div>
-</form>
+</div>
+
+<!-- Login Overlay -->
+<div id="loginOverlay" class="popup-overlay">
+<div class="popup-content">
+<h2>Login to Your Account</h2>
+<div id="loginMessage"></div>
+<div class="form-group">
+<label>Username:</label>
+<input type="text" id="loginUsername" required>
+</div>
+<div class="form-group">
+<label>Password:</label>
+<input type="password" id="loginPassword" required>
+</div>
+<button class="btn" onclick="handleLogin()">Login</button>
+<button class="btn" style="background: none;" onclick="closeLoginOverlay()">Cancel</button>
+</div>
 </div>
 
 <!-- Delete Account Popup -->
@@ -348,7 +305,7 @@ box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 </div>
 </div>
 
-<!-- Main App (hidden until logged in) -->
+<!-- Main App -->
 <div id="mainApp" class="hidden">
 <div class="header">
 <div class="header-left">
@@ -356,11 +313,32 @@ box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 <p>Hive Management System</p>
 </div>
 <div class="header-right" style="display: flex; flex-direction: row; align-items: center; gap: 10px;">
-<span id="usernameEditable" contenteditable="true" style="cursor: text; padding: 3px; border-radius: 3px; border-bottom: 1px dashed #ccc;" onblur="updateUsername(this)" onfocus="selectAllText(this)" title="Click to edit username"></span>
-<span style="cursor: pointer; color: #007bff;" onclick="showChangePasswordPopup()" title="Click to change password">Change password</span>
-<span style="cursor: pointer; color: #007bff;" onclick="showDeleteAccountPopup()">Delete account</span>
-<button class="btn" style="background: none;" onclick="logout()">Logout</button>
+<span id="usernameDisplay" style="padding: 3px;">Loading...</span>
+  
+<!-- For anonymous users -->
+<span id="createAccountBtn" style="display: none; cursor: pointer; color: #007bff;" onclick="showCreateAccountFromAnonymous()">Create account</span>
+<span id="loginBtn" style="display: none; cursor: pointer; color: #007bff;" onclick="showLoginOverlay()">Login</button>
+  
+<!-- For registered users -->
+<span id="changePasswordBtn" style="display: none; cursor: pointer; color: #007bff;" onclick="showChangePasswordPopup()" title="Click to change password">Change password</span>
+<span id="deleteAccountBtn" style="display: none; cursor: pointer; color: #007bff;" onclick="showDeleteAccountPopup()">Delete account</span>
+<button id="logoutBtn" class="btn" style="display: none; background: none;" onclick="logout()">Logout</button>
 </div>
+</div>
+
+<!-- Anonymous user warning banner -->
+<div id="anonymousWarning" class="hidden" style="padding: 15px; border-bottom: 1px solid #a2a9b1;">
+  <div class="cdx-message cdx-message--warning">
+    <span class="cdx-message__icon"></span>
+    <div class="cdx-message__content">
+      <strong>Warning:</strong> There are major tradeoffs if you decide to not create an account. This uses your IP address, which means:
+          <ul>
+          <li><b>If your IP address changes</b>, you will not be able to access your data and it will remain on that IP address.</li>
+          <li><b>If someone else has the same IP address</b>, they may see your data and you may see their data.
+          </ul>
+          You can create an account by clicking "Create account" in the top right corner.
+    </div>
+  </div>
 </div>
 
 <div class="container">
@@ -396,7 +374,7 @@ box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 
 <div id="hives" class="section">
 <button class="btn" onclick="showAddHiveForm()">+ Add New Hive</button>
-<div id="addHiveForm" style="display:none; margin-top: 20px; border: 2px solid #fad30f; padding: 20px; border-radius: 8px;">
+<div id="addHiveForm" style="display:none; margin-top: 20px; border: 1px solid #a2a9b1; padding: 20px;">
 <h3>Add New Hive</h3>
 <div class="form-group">
 <label>Hive Name:</label>
@@ -447,7 +425,7 @@ box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 <div id="inspections" class="section">
 <h2>Inspection Logs</h2>
 <button class="btn" onclick="showAddInspectionForm()">+ New Inspection</button>
-<div id="addInspectionForm" style="display:none; margin-top: 20px; border: 2px solid #fad30f; padding: 20px; border-radius: 8px;">
+<div id="addInspectionForm" style="display:none; margin-top: 20px; border: 1px solid #a2a9b1; padding: 20px;">
 <h3>Log Inspection</h3>
 <div class="form-group">
 <label>Select Hive:</label>
@@ -501,7 +479,7 @@ box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 <div id="treatments" class="section">
 <h2>Treatments & Health</h2>
 <button class="btn" onclick="showAddTreatmentForm()">+ Add Treatment</button>
-<div id="addTreatmentForm" style="display:none; margin-top: 20px; border: 2px solid #fad30f; padding: 20px; border-radius: 8px;">
+<div id="addTreatmentForm" style="display:none; margin-top: 20px; border: 1px solid #a2a9b1; padding: 20px;">
 <h3>Record Treatment</h3>
 <div class="form-group">
 <label>Select Hive:</label>
@@ -543,7 +521,7 @@ box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 <div id="harvest" class="section">
 <h2>Harvest Records</h2>
 <button class="btn" onclick="showAddHarvestForm()">+ Record Harvest</button>
-<div id="addHarvestForm" style="display:none; margin-top: 20px; border: 2px solid #fad30f; padding: 20px; border-radius: 8px;">
+<div id="addHarvestForm" style="display:none; margin-top: 20px; border: 1px solid #a2a9b1; padding: 20px;">
 <h3>Log Harvest</h3>
 <div class="form-group">
 <label>Select Hive:</label>
@@ -570,7 +548,7 @@ box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 <div id="tasks" class="section">
 <h2>Tasks & Reminders</h2>
 <button class="btn" onclick="showAddTaskForm()">+ Add Task</button>
-<div id="addTaskForm" style="display:none; margin-top: 20px; border: 2px solid #fad30f; padding: 20px; border-radius: 8px;">
+<div id="addTaskForm" style="display:none; margin-top: 20px; border: 1px solid #a2a9b1; padding: 20px;">
 <h3>Create Task</h3>
 <div class="form-group">
 <label>Task:</label>
@@ -615,61 +593,67 @@ let tasks = [];
 let authToken = localStorage.getItem('authToken');
 let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
 
-// Authentication functions
-async function handleAuth(action) {
-const username = document.getElementById('authUsername').value.trim();
-const password = document.getElementById('authPassword').value;
-
-if (!username || !password) {
-showAuthMessage('Please enter both username and password', 'error');
-return;
+// Check if user is in anonymous mode
+function isAnonymousMode() {
+return !authToken || !currentUser;
 }
 
-const endpoint = action === 'login' ? '/auth/login' : '/auth/register';
-const body = { username, password };
+// Update UI based on user mode
+function updateUIForUserMode() {
+const isAnonymous = isAnonymousMode();
+const usernameDisplay = document.getElementById('usernameDisplay');
+const createAccountBtn = document.getElementById('createAccountBtn');
+const loginBtn = document.getElementById('loginBtn');
+const changePasswordBtn = document.getElementById('changePasswordBtn');
+const deleteAccountBtn = document.getElementById('deleteAccountBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+const anonymousWarning = document.getElementById('anonymousWarning');
 
-try {
-const response = await fetch(API_URL + endpoint, {
-method: 'POST',
-headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify(body)
-});
-
-const data = await response.json();
-
-if (!response.ok) {
-// Special message for duplicate username during signup
-if (action === 'register' && data.error && data.error.includes('already exists')) {
-showAuthMessage('An account with that username already exists. If you meant to log into your existing account, click the "Login" button instead.', 'error');
+if (isAnonymous) {
+  // Anonymous mode
+  usernameDisplay.textContent = '[Anonymous]';  // Changed from 'IP: [Anonymous]'
+  usernameDisplay.contentEditable = 'false';    // Make non-editable
+  usernameDisplay.style.cursor = 'default';
+  usernameDisplay.style.borderBottom = 'none';  // Remove dashed border
+  usernameDisplay.title = 'Using anonymous mode';
+  createAccountBtn.style.display = 'inline-block';
+  loginBtn.style.display = 'inline-block';
+  changePasswordBtn.style.display = 'none';
+  deleteAccountBtn.style.display = 'none';
+  logoutBtn.style.display = 'none';
+  anonymousWarning.classList.remove('hidden');
 } else {
-showAuthMessage(data.error || 'Authentication failed', 'error');
-}
-return;
-}
-
-authToken = data.token;
-currentUser = data.user;
-localStorage.setItem('authToken', authToken);
-localStorage.setItem('currentUser', JSON.stringify(currentUser));
-
-showAuthMessage(action === 'login' ? 'Login successful!' : 'Account created!', 'success');
-setTimeout(() => {
-document.getElementById('authScreen').classList.add('hidden');
-document.getElementById('mainApp').classList.remove('hidden');
-loadAllData();
-}, 500);
-} catch (error) {
-showAuthMessage('Connection error. Make sure the server is running.', 'error');
-console.error('Auth error:', error);
+// Registered user mode
+usernameDisplay.textContent = currentUser.username;
+usernameDisplay.contentEditable = 'true';
+usernameDisplay.style.cursor = 'text';
+usernameDisplay.style.borderBottom = '1px dashed #ccc';
+usernameDisplay.title = 'Click to edit username';
+usernameDisplay.onblur = function() { updateUsername(this); };
+usernameDisplay.onfocus = function() { selectAllText(this); };
+createAccountBtn.style.display = 'none';
+loginBtn.style.display = 'none';
+changePasswordBtn.style.display = 'inline';
+deleteAccountBtn.style.display = 'inline';
+logoutBtn.style.display = 'inline-block';
+anonymousWarning.classList.add('hidden');
 }
 }
 
-function toggleAuthMode() {
-// This function is no longer needed but keeping it to avoid errors
+// Create account overlay functions
+function showCreateAccountFromAnonymous() {
+document.getElementById('createAccountOverlay').classList.add('active');
+document.getElementById('createAccountMessage').innerHTML = '';
+document.getElementById('createUsername').value = '';
+document.getElementById('createPassword').value = '';
 }
 
-function showAuthMessage(message, type) {
-const messageDiv = document.getElementById('authMessage');
+function closeCreateAccountOverlay() {
+document.getElementById('createAccountOverlay').classList.remove('active');
+}
+
+function showCreateAccountMessage(message, type) {
+const messageDiv = document.getElementById('createAccountMessage');
 const typeLabel = type === 'error' ? 'Error' : type === 'success' ? 'Success' : 'Notice';
 messageDiv.innerHTML = `
 <div class="cdx-message cdx-message--${type}">
@@ -680,15 +664,125 @@ messageDiv.innerHTML = `
 </div>`;
 }
 
+async function createAccountFromAnonymous() {
+const username = document.getElementById('createUsername').value.trim();
+const password = document.getElementById('createPassword').value;
+
+if (!username || !password) {
+showCreateAccountMessage('Please enter both username and password', 'error');
+return;
+}
+
+try {
+const response = await fetch(API_URL + '/auth/register', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ username, password })
+});
+
+const data = await response.json();
+
+if (!response.ok) {
+if (data.error && data.error.includes('already exists')) {
+showCreateAccountMessage('Username already taken. Please choose another.', 'error');
+} else {
+showCreateAccountMessage(data.error || 'Registration failed', 'error');
+}
+return;
+}
+
+authToken = data.token;
+currentUser = data.user;
+localStorage.setItem('authToken', authToken);
+localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+showCreateAccountMessage('Account created successfully!', 'success');
+
+setTimeout(() => {
+closeCreateAccountOverlay();
+updateUIForUserMode();
+loadAllData();
+}, 1500);
+
+} catch (error) {
+showCreateAccountMessage('Connection error. Please try again.', 'error');
+console.error('Create account error:', error);
+}
+}
+
+// Login overlay functions
+function showLoginOverlay() {
+document.getElementById('loginOverlay').classList.add('active');
+document.getElementById('loginMessage').innerHTML = '';
+document.getElementById('loginUsername').value = '';
+document.getElementById('loginPassword').value = '';
+}
+
+function closeLoginOverlay() {
+document.getElementById('loginOverlay').classList.remove('active');
+}
+
+function showLoginMessage(message, type) {
+const messageDiv = document.getElementById('loginMessage');
+const typeLabel = type === 'error' ? 'Error' : type === 'success' ? 'Success' : 'Notice';
+messageDiv.innerHTML = `
+<div class="cdx-message cdx-message--${type}">
+<span class="cdx-message__icon"></span>
+<div class="cdx-message__content">
+<strong>${typeLabel}:</strong> ${message}
+</div>
+</div>`;
+}
+
+async function handleLogin() {
+const username = document.getElementById('loginUsername').value.trim();
+const password = document.getElementById('loginPassword').value;
+
+if (!username || !password) {
+showLoginMessage('Please enter both username and password', 'error');
+return;
+}
+
+try {
+const response = await fetch(API_URL + '/auth/login', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ username, password })
+});
+
+const data = await response.json();
+
+if (!response.ok) {
+showLoginMessage(data.error || 'Login failed', 'error');
+return;
+}
+
+authToken = data.token;
+currentUser = data.user;
+localStorage.setItem('authToken', authToken);
+localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+showLoginMessage('Login successful!', 'success');
+
+setTimeout(() => {
+closeLoginOverlay();
+updateUIForUserMode();
+loadAllData();
+}, 1000);
+
+} catch (error) {
+showLoginMessage('Connection error. Make sure the server is running.', 'error');
+console.error('Login error:', error);
+}
+}
+
 function logout() {
 localStorage.removeItem('authToken');
 localStorage.removeItem('currentUser');
 authToken = null;
 currentUser = null;
-document.getElementById('mainApp').classList.add('hidden');
-document.getElementById('authScreen').classList.remove('hidden');
-document.getElementById('authForm').reset();
-document.getElementById('authMessage').innerHTML = '';
+updateUIForUserMode();
+loadAllData();
 }
 
 function showDeleteAccountPopup() {
@@ -779,9 +873,11 @@ selection.addRange(range);
 }
 
 async function updateUsername(element) {
+if (isAnonymousMode()) return;
+
 const newUsername = element.textContent.trim();
 if (newUsername === currentUser.username) {
-return; // No change
+return;
 }
 
 if (!newUsername || newUsername.length < 1) {
@@ -791,11 +887,10 @@ return;
 }
 
 try {
-const response = await apiRequest('/auth/username', 'PUT', { username: newUsername });
+await apiRequest('/auth/username', 'PUT', { username: newUsername });
 currentUser.username = newUsername;
 localStorage.setItem('currentUser', JSON.stringify(currentUser));
 element.textContent = newUsername;
-// Username updated silently - no popup needed
 } catch (error) {
 console.error('Error updating username:', error);
 alert('Error updating username. It may already be taken.');
@@ -808,10 +903,13 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
 const options = {
 method,
 headers: {
-'Content-Type': 'application/json',
-'Authorization': `Bearer ${authToken}`
+'Content-Type': 'application/json'
 }
 };
+
+if (!isAnonymousMode()) {
+options.headers['Authorization'] = `Bearer ${authToken}`;
+}
 
 if (body) {
 options.body = JSON.stringify(body);
@@ -839,31 +937,44 @@ throw error;
 
 // Load all data from server
 async function loadAllData() {
-try {
-document.getElementById('usernameEditable').textContent = currentUser.username;
-hives = await apiRequest('/hives');
-inspections = await apiRequest('/inspections');
-treatments = await apiRequest('/treatments');
-harvests = await apiRequest('/harvests');
-tasks = await apiRequest('/tasks');
+  try {
+    // Get user info (including IP for anonymous users)
+    const userInfo = await apiRequest('/auth/me');
+    
+    if (userInfo.isAnonymous) {
+      document.getElementById('usernameDisplay').textContent = `${userInfo.ipAddress}`;
+    }
+    
+    hives = await apiRequest('/hives');
+    inspections = await apiRequest('/inspections');
+    treatments = await apiRequest('/treatments');
+    harvests = await apiRequest('/harvests');
+    tasks = await apiRequest('/tasks');
 
-updateDashboard();
-renderHives();
-renderInspections();
-renderTreatments();
-renderHarvests();
-renderTasks();
-updateHiveSelects();
-} catch (error) {
-console.error('Error loading data:', error);
-}
+    updateDashboard();
+    renderHives();
+    renderInspections();
+    renderTreatments();
+    renderHarvests();
+    renderTasks();
+    updateHiveSelects();
+  } catch (error) {
+    console.error('Error loading data:', error);
+  }
 }
 
 // Initialize
 window.onload = function() {
+// Check if user has a registered account
 if (authToken && currentUser) {
-document.getElementById('authScreen').classList.add('hidden');
+// Registered user
 document.getElementById('mainApp').classList.remove('hidden');
+updateUIForUserMode();
+loadAllData();
+} else {
+// Default: Anonymous mode
+document.getElementById('mainApp').classList.remove('hidden');
+updateUIForUserMode();
 loadAllData();
 }
 
@@ -951,7 +1062,7 @@ const treatment = {
 hiveId: parseInt(document.getElementById('treatmentHive').value),
 type: document.getElementById('treatmentType').value,
 startDate: document.getElementById('treatmentStart').value,
-endDate: document.getElementById('treatmentEnd').value,
+endDate: document.getElementById('treatmentEnd').value || null,
 withdrawalPeriod: parseInt(document.getElementById('withdrawalPeriod').value),
 notes: document.getElementById('treatmentNotes').value
 };
@@ -1014,14 +1125,19 @@ const grid = document.getElementById('hiveGrid');
 grid.innerHTML = '';
 hives.forEach(hive => {
 const card = document.createElement('div');
-card.className = `hive-card ${hive.strength}`;
+card.style.border = '1px solid #a2a9b1';
+card.style.marginBottom = '15px';
 card.innerHTML = `
-<h3>${hive.name}</h3>
+<div style="background: #f8f9fa; padding: 10px; border-bottom: 1px solid #a2a9b1; font-weight: bold;">
+${hive.name}
+</div>
+<div style="padding: 15px;">
 <p><strong>Location:</strong> ${hive.location}</p>
 <p><strong>Type:</strong> ${hive.type}</p>
 <p><strong>Strength:</strong> ${hive.strength}</p>
 <p><strong>Queen:</strong> ${hive.queen_age} years (${hive.queen_color})</p>
-<button class="btn" style="background: var(--color-destructive, #bf3c2c); color: white;" style="margin-top: 10px;" onclick="deleteHive(${hive.id})">Delete</button>
+<button class="btn" style="background: var(--color-destructive, #bf3c2c); color: white;" onclick="deleteHive(${hive.id})">Delete</button>
+</div>
 `;
 grid.appendChild(card);
 });
@@ -1031,7 +1147,6 @@ function renderInspections() {
 const list = document.getElementById('inspectionList');
 list.innerHTML = '';
 inspections.slice().reverse().forEach(inspection => {
-const hive = hives.find(h => h.id == inspection.hive_id);
 const item = document.createElement('li');
 item.className = 'inspection-item';
 item.innerHTML = `

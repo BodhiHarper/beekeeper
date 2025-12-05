@@ -22,22 +22,28 @@ const pool = new Pool({
 app.use(cors());
 app.use(express.json());
 
-// Authentication middleware
+// Updated Authentication middleware - supports both registered users AND anonymous users
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
-  if (!token) {
-    return res.status(401).json({ error: 'Access denied. No token provided.' });
-  }
-
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) {
-      return res.status(403).json({ error: 'Invalid token.' });
-    }
-    req.userId = user.userId;
+  if (token) {
+    // Regular user authentication
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+      if (err) {
+        return res.status(403).json({ error: 'Invalid token.' });
+      }
+      req.userId = user.userId;
+      req.isAnonymous = false;
+      next();
+    });
+  } else {
+    // Anonymous mode - use IP address
+    req.userId = null;
+    req.ipAddress = req.ip || req.connection.remoteAddress || req.socket.remoteAddress || 'unknown';
+    req.isAnonymous = true;
     next();
-  });
+  }
 };
 
 // ========== AUTH ROUTES ==========
@@ -107,8 +113,36 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// Delete account
+// Get current user info (including IP for anonymous users)
+app.get('/api/auth/me', authenticateToken, async (req, res) => {
+  if (req.isAnonymous) {
+    res.json({ 
+      isAnonymous: true, 
+      ipAddress: req.ipAddress 
+    });
+  } else {
+    try {
+      const result = await pool.query('SELECT id, username FROM users WHERE id = $1', [req.userId]);
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'User not found.' });
+      }
+      res.json({ 
+        isAnonymous: false, 
+        user: result.rows[0] 
+      });
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      res.status(500).json({ error: 'Server error.' });
+    }
+  }
+});
+
+// Delete account (registered users only)
 app.delete('/api/auth/account', authenticateToken, async (req, res) => {
+  if (req.isAnonymous) {
+    return res.status(403).json({ error: 'Anonymous users cannot delete accounts.' });
+  }
+
   try {
     const result = await pool.query('DELETE FROM users WHERE id = $1 RETURNING username', [req.userId]);
     
@@ -123,8 +157,12 @@ app.delete('/api/auth/account', authenticateToken, async (req, res) => {
   }
 });
 
-// Update username
+// Update username (registered users only)
 app.put('/api/auth/username', authenticateToken, async (req, res) => {
+  if (req.isAnonymous) {
+    return res.status(403).json({ error: 'Anonymous users cannot update username.' });
+  }
+
   const { username } = req.body;
 
   if (!username || username.length < 1) {
@@ -154,8 +192,12 @@ app.put('/api/auth/username', authenticateToken, async (req, res) => {
   }
 });
 
-// Update password
+// Update password (registered users only)
 app.put('/api/auth/password', authenticateToken, async (req, res) => {
+  if (req.isAnonymous) {
+    return res.status(403).json({ error: 'Anonymous users cannot update password.' });
+  }
+
   const { currentPassword, newPassword } = req.body;
 
   if (!currentPassword || !newPassword) {
@@ -200,10 +242,25 @@ app.put('/api/auth/password', authenticateToken, async (req, res) => {
 
 // ========== HIVES ROUTES ==========
 
-// Get all hives
+// Get all hives (supports both registered and anonymous users)
 app.get('/api/hives', authenticateToken, async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM hives WHERE user_id = $1 ORDER BY created_at DESC', [req.userId]);
+    let result;
+    
+    if (req.isAnonymous) {
+      // Get hives for this IP address
+      result = await pool.query(
+        'SELECT * FROM hives WHERE ip_address = $1 AND user_id IS NULL ORDER BY created_at DESC',
+        [req.ipAddress]
+      );
+    } else {
+      // Get hives for registered user
+      result = await pool.query(
+        'SELECT * FROM hives WHERE user_id = $1 ORDER BY created_at DESC',
+        [req.userId]
+      );
+    }
+    
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching hives:', error);
@@ -211,15 +268,27 @@ app.get('/api/hives', authenticateToken, async (req, res) => {
   }
 });
 
-// Create hive
+// Create hive (supports both registered and anonymous users)
 app.post('/api/hives', authenticateToken, async (req, res) => {
   const { name, location, type, strength, queenAge, queenColor } = req.body;
 
   try {
-    const result = await pool.query(
-      'INSERT INTO hives (user_id, name, location, type, strength, queen_age, queen_color, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW()) RETURNING *',
-      [req.userId, name, location, type, strength, queenAge, queenColor]
-    );
+    let result;
+    
+    if (req.isAnonymous) {
+      // Create hive for IP address
+      result = await pool.query(
+        'INSERT INTO hives (name, location, type, strength, queen_age, queen_color, ip_address, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW()) RETURNING *',
+        [name, location, type, strength, queenAge, queenColor, req.ipAddress]
+      );
+    } else {
+      // Create hive for registered user
+      result = await pool.query(
+        'INSERT INTO hives (user_id, name, location, type, strength, queen_age, queen_color, created_at) VALUES ($1, $2, $3, $4, $5, $6, NOW()) RETURNING *',
+        [req.userId, name, location, type, strength, queenAge, queenColor]
+      );
+    }
+    
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error('Error creating hive:', error);
@@ -227,16 +296,25 @@ app.post('/api/hives', authenticateToken, async (req, res) => {
   }
 });
 
-// Update hive
+// Update hive (supports both registered and anonymous users)
 app.put('/api/hives/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
   const { name, location, type, strength, queenAge, queenColor } = req.body;
 
   try {
-    const result = await pool.query(
-      'UPDATE hives SET name = $1, location = $2, type = $3, strength = $4, queen_age = $5, queen_color = $6 WHERE id = $7 AND user_id = $8 RETURNING *',
-      [name, location, type, strength, queenAge, queenColor, id, req.userId]
-    );
+    let result;
+    
+    if (req.isAnonymous) {
+      result = await pool.query(
+        'UPDATE hives SET name = $1, location = $2, type = $3, strength = $4, queen_age = $5, queen_color = $6 WHERE id = $7 AND ip_address = $8 AND user_id IS NULL RETURNING *',
+        [name, location, type, strength, queenAge, queenColor, id, req.ipAddress]
+      );
+    } else {
+      result = await pool.query(
+        'UPDATE hives SET name = $1, location = $2, type = $3, strength = $4, queen_age = $5, queen_color = $6 WHERE id = $7 AND user_id = $8 RETURNING *',
+        [name, location, type, strength, queenAge, queenColor, id, req.userId]
+      );
+    }
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Hive not found.' });
@@ -249,12 +327,24 @@ app.put('/api/hives/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Delete hive
+// Delete hive (supports both registered and anonymous users)
 app.delete('/api/hives/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
 
   try {
-    const result = await pool.query('DELETE FROM hives WHERE id = $1 AND user_id = $2 RETURNING *', [id, req.userId]);
+    let result;
+    
+    if (req.isAnonymous) {
+      result = await pool.query(
+        'DELETE FROM hives WHERE id = $1 AND ip_address = $2 AND user_id IS NULL RETURNING *',
+        [id, req.ipAddress]
+      );
+    } else {
+      result = await pool.query(
+        'DELETE FROM hives WHERE id = $1 AND user_id = $2 RETURNING *',
+        [id, req.userId]
+      );
+    }
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Hive not found.' });
@@ -269,13 +359,23 @@ app.delete('/api/hives/:id', authenticateToken, async (req, res) => {
 
 // ========== INSPECTIONS ROUTES ==========
 
-// Get all inspections
+// Get all inspections (supports both registered and anonymous users)
 app.get('/api/inspections', authenticateToken, async (req, res) => {
   try {
-    const result = await pool.query(
-      'SELECT i.*, h.name as hive_name FROM inspections i JOIN hives h ON i.hive_id = h.id WHERE h.user_id = $1 ORDER BY i.date DESC',
-      [req.userId]
-    );
+    let result;
+    
+    if (req.isAnonymous) {
+      result = await pool.query(
+        'SELECT i.*, h.name as hive_name FROM inspections i JOIN hives h ON i.hive_id = h.id WHERE h.ip_address = $1 AND h.user_id IS NULL ORDER BY i.date DESC',
+        [req.ipAddress]
+      );
+    } else {
+      result = await pool.query(
+        'SELECT i.*, h.name as hive_name FROM inspections i JOIN hives h ON i.hive_id = h.id WHERE h.user_id = $1 ORDER BY i.date DESC',
+        [req.userId]
+      );
+    }
+    
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching inspections:', error);
@@ -283,13 +383,25 @@ app.get('/api/inspections', authenticateToken, async (req, res) => {
   }
 });
 
-// Create inspection
+// Create inspection (supports both registered and anonymous users)
 app.post('/api/inspections', authenticateToken, async (req, res) => {
   const { hiveId, date, broodPattern, temperament, varroaCount, honeyStores, notes } = req.body;
 
   try {
-    // Verify hive belongs to user
-    const hiveCheck = await pool.query('SELECT * FROM hives WHERE id = $1 AND user_id = $2', [hiveId, req.userId]);
+    // Verify hive belongs to user or IP
+    let hiveCheck;
+    if (req.isAnonymous) {
+      hiveCheck = await pool.query(
+        'SELECT * FROM hives WHERE id = $1 AND ip_address = $2 AND user_id IS NULL',
+        [hiveId, req.ipAddress]
+      );
+    } else {
+      hiveCheck = await pool.query(
+        'SELECT * FROM hives WHERE id = $1 AND user_id = $2',
+        [hiveId, req.userId]
+      );
+    }
+    
     if (hiveCheck.rows.length === 0) {
       return res.status(404).json({ error: 'Hive not found.' });
     }
@@ -305,15 +417,24 @@ app.post('/api/inspections', authenticateToken, async (req, res) => {
   }
 });
 
-// Delete inspection
+// Delete inspection (supports both registered and anonymous users)
 app.delete('/api/inspections/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
 
   try {
-    const result = await pool.query(
-      'DELETE FROM inspections WHERE id = $1 AND hive_id IN (SELECT id FROM hives WHERE user_id = $2) RETURNING *',
-      [id, req.userId]
-    );
+    let result;
+    
+    if (req.isAnonymous) {
+      result = await pool.query(
+        'DELETE FROM inspections WHERE id = $1 AND hive_id IN (SELECT id FROM hives WHERE ip_address = $2 AND user_id IS NULL) RETURNING *',
+        [id, req.ipAddress]
+      );
+    } else {
+      result = await pool.query(
+        'DELETE FROM inspections WHERE id = $1 AND hive_id IN (SELECT id FROM hives WHERE user_id = $2) RETURNING *',
+        [id, req.userId]
+      );
+    }
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Inspection not found.' });
@@ -328,13 +449,23 @@ app.delete('/api/inspections/:id', authenticateToken, async (req, res) => {
 
 // ========== TREATMENTS ROUTES ==========
 
-// Get all treatments
+// Get all treatments (supports both registered and anonymous users)
 app.get('/api/treatments', authenticateToken, async (req, res) => {
   try {
-    const result = await pool.query(
-      'SELECT t.*, h.name as hive_name FROM treatments t JOIN hives h ON t.hive_id = h.id WHERE h.user_id = $1 ORDER BY t.start_date DESC',
-      [req.userId]
-    );
+    let result;
+    
+    if (req.isAnonymous) {
+      result = await pool.query(
+        'SELECT t.*, h.name as hive_name FROM treatments t JOIN hives h ON t.hive_id = h.id WHERE h.ip_address = $1 AND h.user_id IS NULL ORDER BY t.start_date DESC',
+        [req.ipAddress]
+      );
+    } else {
+      result = await pool.query(
+        'SELECT t.*, h.name as hive_name FROM treatments t JOIN hives h ON t.hive_id = h.id WHERE h.user_id = $1 ORDER BY t.start_date DESC',
+        [req.userId]
+      );
+    }
+    
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching treatments:', error);
@@ -342,12 +473,24 @@ app.get('/api/treatments', authenticateToken, async (req, res) => {
   }
 });
 
-// Create treatment
+// Create treatment (supports both registered and anonymous users)
 app.post('/api/treatments', authenticateToken, async (req, res) => {
   const { hiveId, type, startDate, endDate, withdrawalPeriod, notes } = req.body;
 
   try {
-    const hiveCheck = await pool.query('SELECT * FROM hives WHERE id = $1 AND user_id = $2', [hiveId, req.userId]);
+    let hiveCheck;
+    if (req.isAnonymous) {
+      hiveCheck = await pool.query(
+        'SELECT * FROM hives WHERE id = $1 AND ip_address = $2 AND user_id IS NULL',
+        [hiveId, req.ipAddress]
+      );
+    } else {
+      hiveCheck = await pool.query(
+        'SELECT * FROM hives WHERE id = $1 AND user_id = $2',
+        [hiveId, req.userId]
+      );
+    }
+    
     if (hiveCheck.rows.length === 0) {
       return res.status(404).json({ error: 'Hive not found.' });
     }
@@ -363,15 +506,24 @@ app.post('/api/treatments', authenticateToken, async (req, res) => {
   }
 });
 
-// Delete treatment
+// Delete treatment (supports both registered and anonymous users)
 app.delete('/api/treatments/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
 
   try {
-    const result = await pool.query(
-      'DELETE FROM treatments WHERE id = $1 AND hive_id IN (SELECT id FROM hives WHERE user_id = $2) RETURNING *',
-      [id, req.userId]
-    );
+    let result;
+    
+    if (req.isAnonymous) {
+      result = await pool.query(
+        'DELETE FROM treatments WHERE id = $1 AND hive_id IN (SELECT id FROM hives WHERE ip_address = $2 AND user_id IS NULL) RETURNING *',
+        [id, req.ipAddress]
+      );
+    } else {
+      result = await pool.query(
+        'DELETE FROM treatments WHERE id = $1 AND hive_id IN (SELECT id FROM hives WHERE user_id = $2) RETURNING *',
+        [id, req.userId]
+      );
+    }
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Treatment not found.' });
@@ -386,13 +538,23 @@ app.delete('/api/treatments/:id', authenticateToken, async (req, res) => {
 
 // ========== HARVESTS ROUTES ==========
 
-// Get all harvests
+// Get all harvests (supports both registered and anonymous users)
 app.get('/api/harvests', authenticateToken, async (req, res) => {
   try {
-    const result = await pool.query(
-      'SELECT h.*, hv.name as hive_name FROM harvests h JOIN hives hv ON h.hive_id = hv.id WHERE hv.user_id = $1 ORDER BY h.date DESC',
-      [req.userId]
-    );
+    let result;
+    
+    if (req.isAnonymous) {
+      result = await pool.query(
+        'SELECT h.*, hv.name as hive_name FROM harvests h JOIN hives hv ON h.hive_id = hv.id WHERE hv.ip_address = $1 AND hv.user_id IS NULL ORDER BY h.date DESC',
+        [req.ipAddress]
+      );
+    } else {
+      result = await pool.query(
+        'SELECT h.*, hv.name as hive_name FROM harvests h JOIN hives hv ON h.hive_id = hv.id WHERE hv.user_id = $1 ORDER BY h.date DESC',
+        [req.userId]
+      );
+    }
+    
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching harvests:', error);
@@ -400,12 +562,24 @@ app.get('/api/harvests', authenticateToken, async (req, res) => {
   }
 });
 
-// Create harvest
+// Create harvest (supports both registered and anonymous users)
 app.post('/api/harvests', authenticateToken, async (req, res) => {
   const { hiveId, date, amount, notes } = req.body;
 
   try {
-    const hiveCheck = await pool.query('SELECT * FROM hives WHERE id = $1 AND user_id = $2', [hiveId, req.userId]);
+    let hiveCheck;
+    if (req.isAnonymous) {
+      hiveCheck = await pool.query(
+        'SELECT * FROM hives WHERE id = $1 AND ip_address = $2 AND user_id IS NULL',
+        [hiveId, req.ipAddress]
+      );
+    } else {
+      hiveCheck = await pool.query(
+        'SELECT * FROM hives WHERE id = $1 AND user_id = $2',
+        [hiveId, req.userId]
+      );
+    }
+    
     if (hiveCheck.rows.length === 0) {
       return res.status(404).json({ error: 'Hive not found.' });
     }
@@ -421,15 +595,24 @@ app.post('/api/harvests', authenticateToken, async (req, res) => {
   }
 });
 
-// Delete harvest
+// Delete harvest (supports both registered and anonymous users)
 app.delete('/api/harvests/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
 
   try {
-    const result = await pool.query(
-      'DELETE FROM harvests WHERE id = $1 AND hive_id IN (SELECT id FROM hives WHERE user_id = $2) RETURNING *',
-      [id, req.userId]
-    );
+    let result;
+    
+    if (req.isAnonymous) {
+      result = await pool.query(
+        'DELETE FROM harvests WHERE id = $1 AND hive_id IN (SELECT id FROM hives WHERE ip_address = $2 AND user_id IS NULL) RETURNING *',
+        [id, req.ipAddress]
+      );
+    } else {
+      result = await pool.query(
+        'DELETE FROM harvests WHERE id = $1 AND hive_id IN (SELECT id FROM hives WHERE user_id = $2) RETURNING *',
+        [id, req.userId]
+      );
+    }
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Harvest not found.' });
@@ -444,13 +627,23 @@ app.delete('/api/harvests/:id', authenticateToken, async (req, res) => {
 
 // ========== TASKS ROUTES ==========
 
-// Get all tasks
+// Get all tasks (supports both registered and anonymous users)
 app.get('/api/tasks', authenticateToken, async (req, res) => {
   try {
-    const result = await pool.query(
-      'SELECT t.*, h.name as hive_name FROM tasks t LEFT JOIN hives h ON t.hive_id = h.id WHERE t.user_id = $1 ORDER BY t.date ASC',
-      [req.userId]
-    );
+    let result;
+    
+    if (req.isAnonymous) {
+      result = await pool.query(
+        'SELECT t.*, h.name as hive_name FROM tasks t LEFT JOIN hives h ON t.hive_id = h.id WHERE t.ip_address = $1 AND t.user_id IS NULL ORDER BY t.date ASC',
+        [req.ipAddress]
+      );
+    } else {
+      result = await pool.query(
+        'SELECT t.*, h.name as hive_name FROM tasks t LEFT JOIN hives h ON t.hive_id = h.id WHERE t.user_id = $1 ORDER BY t.date ASC',
+        [req.userId]
+      );
+    }
+    
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching tasks:', error);
@@ -458,22 +651,43 @@ app.get('/api/tasks', authenticateToken, async (req, res) => {
   }
 });
 
-// Create task
+// Create task (supports both registered and anonymous users)
 app.post('/api/tasks', authenticateToken, async (req, res) => {
   const { name, hiveId, date, priority } = req.body;
 
   try {
     if (hiveId) {
-      const hiveCheck = await pool.query('SELECT * FROM hives WHERE id = $1 AND user_id = $2', [hiveId, req.userId]);
+      let hiveCheck;
+      if (req.isAnonymous) {
+        hiveCheck = await pool.query(
+          'SELECT * FROM hives WHERE id = $1 AND ip_address = $2 AND user_id IS NULL',
+          [hiveId, req.ipAddress]
+        );
+      } else {
+        hiveCheck = await pool.query(
+          'SELECT * FROM hives WHERE id = $1 AND user_id = $2',
+          [hiveId, req.userId]
+        );
+      }
+      
       if (hiveCheck.rows.length === 0) {
         return res.status(404).json({ error: 'Hive not found.' });
       }
     }
 
-    const result = await pool.query(
-      'INSERT INTO tasks (user_id, name, hive_id, date, priority, completed, created_at) VALUES ($1, $2, $3, $4, $5, false, NOW()) RETURNING *',
-      [req.userId, name, hiveId || null, date, priority]
-    );
+    let result;
+    if (req.isAnonymous) {
+      result = await pool.query(
+        'INSERT INTO tasks (name, hive_id, date, priority, ip_address, completed, created_at) VALUES ($1, $2, $3, $4, $5, false, NOW()) RETURNING *',
+        [name, hiveId || null, date, priority, req.ipAddress]
+      );
+    } else {
+      result = await pool.query(
+        'INSERT INTO tasks (user_id, name, hive_id, date, priority, completed, created_at) VALUES ($1, $2, $3, $4, $5, false, NOW()) RETURNING *',
+        [req.userId, name, hiveId || null, date, priority]
+      );
+    }
+    
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error('Error creating task:', error);
@@ -481,15 +695,24 @@ app.post('/api/tasks', authenticateToken, async (req, res) => {
   }
 });
 
-// Complete task
+// Complete task (supports both registered and anonymous users)
 app.put('/api/tasks/:id/complete', authenticateToken, async (req, res) => {
   const { id } = req.params;
 
   try {
-    const result = await pool.query(
-      'UPDATE tasks SET completed = true WHERE id = $1 AND user_id = $2 RETURNING *',
-      [id, req.userId]
-    );
+    let result;
+    
+    if (req.isAnonymous) {
+      result = await pool.query(
+        'UPDATE tasks SET completed = true WHERE id = $1 AND ip_address = $2 AND user_id IS NULL RETURNING *',
+        [id, req.ipAddress]
+      );
+    } else {
+      result = await pool.query(
+        'UPDATE tasks SET completed = true WHERE id = $1 AND user_id = $2 RETURNING *',
+        [id, req.userId]
+      );
+    }
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Task not found.' });
@@ -502,15 +725,24 @@ app.put('/api/tasks/:id/complete', authenticateToken, async (req, res) => {
   }
 });
 
-// Delete task
+// Delete task (supports both registered and anonymous users)
 app.delete('/api/tasks/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
 
   try {
-    const result = await pool.query(
-      'DELETE FROM tasks WHERE id = $1 AND user_id = $2 RETURNING *',
-      [id, req.userId]
-    );
+    let result;
+    
+    if (req.isAnonymous) {
+      result = await pool.query(
+        'DELETE FROM tasks WHERE id = $1 AND ip_address = $2 AND user_id IS NULL RETURNING *',
+        [id, req.ipAddress]
+      );
+    } else {
+      result = await pool.query(
+        'DELETE FROM tasks WHERE id = $1 AND user_id = $2 RETURNING *',
+        [id, req.userId]
+      );
+    }
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Task not found.' });
@@ -531,4 +763,5 @@ app.get('/api/health', (req, res) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`🐝 Beekeeper server running on port ${PORT}`);
+  console.log(`✅ Anonymous mode enabled - IP-based data storage active`);
 });
