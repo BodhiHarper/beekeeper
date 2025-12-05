@@ -344,7 +344,7 @@ box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 <input type="password" id="confirmPassword" placeholder="Confirm new password">
 </div>
 <button class="btn" onclick="confirmChangePassword()">Update Password</button>
-<button class="btn btn-secondary" onclick="closeChangePasswordPopup()">Cancel</button>
+<button class="btn" style="background: none;" onclick="closeChangePasswordPopup()">Cancel</button>
 </div>
 </div>
 
@@ -439,7 +439,7 @@ box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 </select>
 </div>
 <button class="btn" onclick="addHive()">Save Hive</button>
-<button class="btn btn-secondary" onclick="document.getElementById('addHiveForm').style.display='none'">Cancel</button>
+<button class="btn" style="background: none;" onclick="document.getElementById('addHiveForm').style.display='none'">Cancel</button>
 </div>
 <div class="hive-grid" id="hiveGrid"></div>
 </div>
@@ -493,7 +493,7 @@ box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 <textarea id="inspectionNotes" placeholder="General observations, concerns, actions taken..."></textarea>
 </div>
 <button class="btn" onclick="addInspection()">Save Inspection</button>
-<button class="btn btn-secondary" onclick="document.getElementById('addInspectionForm').style.display='none'">Cancel</button>
+<button class="btn" style="background: none;" onclick="document.getElementById('addInspectionForm').style.display='none'">Cancel</button>
 </div>
 <ul class="inspection-list" id="inspectionList"></ul>
 </div>
@@ -535,7 +535,7 @@ box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 <textarea id="treatmentNotes"></textarea>
 </div>
 <button class="btn" onclick="addTreatment()">Save Treatment</button>
-<button class="btn btn-secondary" onclick="document.getElementById('addTreatmentForm').style.display='none'">Cancel</button>
+<button class="btn" style="background: none;" onclick="document.getElementById('addTreatmentForm').style.display='none'">Cancel</button>
 </div>
 <ul class="inspection-list" id="treatmentList"></ul>
 </div>
@@ -562,7 +562,7 @@ box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 <textarea id="harvestNotes" placeholder="Quality, color, floral source..."></textarea>
 </div>
 <button class="btn" onclick="addHarvest()">Save Harvest</button>
-<button class="btn btn-secondary" onclick="document.getElementById('addHarvestForm').style.display='none'">Cancel</button>
+<button class="btn" style="background: none;" onclick="document.getElementById('addHarvestForm').style.display='none'">Cancel</button>
 </div>
 <ul class="inspection-list" id="harvestList"></ul>
 </div>
@@ -595,7 +595,7 @@ box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 </select>
 </div>
 <button class="btn" onclick="addTask()">Save Task</button>
-<button class="btn btn-secondary" onclick="document.getElementById('addTaskForm').style.display='none'">Cancel</button>
+<button class="btn" style="background: none;" onclick="document.getElementById('addTaskForm').style.display='none'">Cancel</button>
 </div>
 <ul class="inspection-list" id="taskList"></ul>
 </div>
@@ -1039,7 +1039,7 @@ item.innerHTML = `
 <p><strong>Brood:</strong> ${inspection.brood_pattern} | <strong>Temperament:</strong> ${inspection.temperament}</p>
 <p><strong>Varroa:</strong> ${inspection.varroa_count || 'N/A'} | <strong>Honey Stores:</strong> ${inspection.honey_stores}</p>
 <p><strong>Notes:</strong> ${inspection.notes || 'None'}</p>
-<button class="btn btn-secondary" onclick="deleteInspection(${inspection.id})">Delete</button>
+<button class="btn" style="background: var(--color-destructive, #bf3c2c); color: white;" onclick="deleteInspection(${inspection.id})">Delete</button>
 `;
 list.appendChild(item);
 });
@@ -1056,7 +1056,7 @@ item.innerHTML = `
 <p><strong>Period:</strong> ${treatment.start_date} to ${treatment.end_date}</p>
 <p><strong>Withdrawal:</strong> ${treatment.withdrawal_period} days</p>
 <p><strong>Notes:</strong> ${treatment.notes || 'None'}</p>
-<button class="btn btn-secondary" onclick="deleteTreatment(${treatment.id})">Delete</button>
+<button class="btn" style="background: var(--color-destructive, #bf3c2c); color: white;" onclick="deleteTreatment(${treatment.id})">Delete</button>
 `;
 list.appendChild(item);
 });
@@ -1088,7 +1088,7 @@ item.innerHTML = `
 <h4>${task.name} - ${task.date}</h4>
 <p><strong>Hive:</strong> ${task.hive_name || 'All Hives'} | <strong>Priority:</strong> ${task.priority}</p>
 <button class="btn" onclick="completeTask(${task.id})">Mark Complete</button>
-<button class="btn btn-secondary" onclick="deleteTask(${task.id})">Delete</button>
+<button class="btn" style="background: var(--color-destructive, #bf3c2c); color: white;" onclick="deleteTask(${task.id})">Delete</button>
 `;
 list.appendChild(item);
 });
